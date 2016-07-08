@@ -110,6 +110,8 @@ auth:
       access_token: theTokenYouGotEarlier
 ```
 
+In GitHub a user is defined by his login, not by his email (even if you cannot create two GitHub account with the same email). `firstName`, `lastName` are also optional, that's why we remapped inforrmation using the `userInfoMapping` conf.
+
 ==== Let's test it
 Don't forget to run the `reconfigure_spinnaker.sh` script to regenerate deck `settings.js` file and then restart spinnaker and you should be able to authenticate yourself using GitHub! +
 You can check your configuration is ok on `http://spinnaker.mydomain.net:9000/gate/env` .
