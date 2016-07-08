@@ -12,7 +12,7 @@
 
     <link rel="shortcut icon" href="https://gbougeard.github.io/blog.english/favicon.ico">
 
-    <link rel="stylesheet" type="text/css" href="//gbougeard.github.io/blog.english/themes/casper/assets/css/screen.css?v=1467989609074" />
+    <link rel="stylesheet" type="text/css" href="//gbougeard.github.io/blog.english/themes/casper/assets/css/screen.css?v=1467993606936" />
     <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
 
     <link rel="canonical" href="https://gbougeard.github.io/blog.english/2016/07/08/Configuring-Spinnaker-authentication-using-Git-Hub-O-Ath.html" />
@@ -20,12 +20,14 @@
     
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Configuring Spinnaker authentication using GitHub OAuth" />
+    <meta property="og:description" content="Target audience The target audience for this post is someone who already know what is Spinnaker and is planning to configure authentication (AuthN) for his Spinnaker instance. Introduction At the moment, AuthN and Authorization (AuthZ) are still work in progress on the Spinnaker project. You can see in the roadmap" />
     <meta property="og:url" content="https://gbougeard.github.io/blog.english/2016/07/08/Configuring-Spinnaker-authentication-using-Git-Hub-O-Ath.html" />
     <meta property="article:tag" content="Spinnaker" />
     <meta property="article:tag" content=" OAuth" />
     
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Configuring Spinnaker authentication using GitHub OAuth" />
+    <meta name="twitter:description" content="Target audience The target audience for this post is someone who already know what is Spinnaker and is planning to configure authentication (AuthN) for his Spinnaker instance. Introduction At the moment, AuthN and Authorization (AuthZ) are still work in progress on the Spinnaker project. You can see in the roadmap" />
     <meta name="twitter:url" content="https://gbougeard.github.io/blog.english/2016/07/08/Configuring-Spinnaker-authentication-using-Git-Hub-O-Ath.html" />
     
     <script type="application/ld+json">
@@ -61,7 +63,188 @@ null
         </header>
 
         <section class="post-content">
-            
+            <div class="sect1">
+<h2 id="_target_audience">Target audience</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The target audience for this post is someone who already know what is <a href="http://www.spinnaker.io">Spinnaker</a> and is planning to configure authentication (AuthN) for his Spinnaker instance.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introduction">Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>At the moment, AuthN and Authorization (AuthZ) are still work in progress on the Spinnaker project. You can see in the <a href="http://www.spinnaker.io/docs/roadmap">roadmap</a> the Google team is in charge. They naturally implemented OAuth2 support for AuthN and AuthZ through Google Apps. But as the implementation is based on Spring Security, using another OAuth2 provider is not really complex.
+Everything is basicaly explained in the <a href="http://www.spinnaker.io/docs/securing-spinnaker#section-oauth-2-0">docs</a> but I&#8217;d like to cover in detail how to use GitHub for AuthN and Authz.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_context">Context</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>I consider you already have a running instance of Spinnaker.</p>
+</div>
+<div class="paragraph">
+<p>I will describe my setup which is based on the <a href="http://www.spinnaker.io/docs/amazon-ami-ids">official AMI</a> deployed on AWS.</p>
+</div>
+<div class="sect2">
+<h3 id="_aws">AWS</h3>
+<div class="sect3">
+<h4 id="_security_group">Security group</h4>
+<div class="paragraph">
+<p>The following ports are open : <code>9000</code> (deck), <code>8084</code> (gate), <code>8087</code> (rosco) for <code>0.0.0.0/0</code>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_route53">Route53</h4>
+<div class="paragraph">
+<p>I added the DNS alias <code>spinnaker.mydomain.net</code> for the IP of my running instance.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_elb">ELB</h4>
+<div class="paragraph">
+<p>I do not use an ELB in front of my Spinnaker instance.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_github">GitHub</h3>
+<div class="paragraph">
+<p>If you want to set up AuthN and AuthZ through GitHub, you must have a GitHub organization.</p>
+</div>
+<div class="paragraph">
+<p>Typically you want all your organization members to be able to login and use GitHub teams to define ACL.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+At the moment, once you will have configured AuthN, everyone with a GitHub account will be able to log into your Spinnaker with Read-Only (RO) rights. You will be able to give Read-Write (RW) to all your organization members or a few ones (using GitHub teams) but everyone will be able to see your infrastructure, pipelines, etc &#8230;&#8203; A brand new service, <a href="https://github.com/spinnaker/fiat">fiat</a> should solve this security issue and give the ability to define really fine ACL but it&#8217;s currently under development. The solution I chose to fix this is to restrict the access to my Spinnaker instance through a VPN (I will not detail this part in this article).
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_oauth_application">OAuth application</h4>
+<div class="paragraph">
+<p>You need to register a new OAuth application on this page <code><a href="https://github.com/organizations/yourOrg/settings/applications" class="bare">https://github.com/organizations/yourOrg/settings/applications</a></code> .</p>
+</div>
+<div class="paragraph">
+<p>The application name and the description will be displayed to the users the first time they autenticate theirself.</p>
+</div>
+<div class="paragraph">
+<p>The two more important fields to fill are :</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>Homepage URL</em> : <code><a href="http://spinnaker.mydmomain.net:9000" class="bare">http://spinnaker.mydmomain.net:9000</a></code> aka deck URL</p>
+</li>
+<li>
+<p><em>Authorization callback URL</em> : <code><a href="http://spinnaker.mydmomain.net:9000/gate/login" class="bare">http://spinnaker.mydmomain.net:9000/gate/login</a></code> which is based on gate URL</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You can notice I used explicit ports, this is because I don&#8217;t use an ELB in front on my instance. Otherwise, the ELB might redirect the port <code>80</code> to <code>9000</code> and I would not have to use explicit ports.</p>
+</div>
+<div class="paragraph">
+<p>Once your configuration saved, you should have two important informations now : <code>Client ID</code> and <code>Client Secret</code> . This will be used later in Spinnaker configuration.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_access_token">Access token</h4>
+<div class="paragraph">
+<p>This is required for AuthZ.</p>
+</div>
+<div class="paragraph">
+<p>Spinnaker will use GitHub API to check users membership. To consume GitHup API, an access token is required so you need to generate one.<br>
+Unfortunately, it&#8217;s not currently possible to use the <code>clientId</code> and <code>clientSecret</code> as credentials. You must generate a personal token on this page <code><a href="https://github.com/settings/tokens" class="bare">https://github.com/settings/tokens</a></code> .<br>
+You can use your personal GitHub account ou create a specific one for a kind of bot, as you wish, the only requirement is to select the <code>read:org</code> scope for this token.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spinnaker">Spinnaker</h3>
+<div class="sect4">
+<h5 id="_apache">Apache</h5>
+<div class="paragraph">
+<p>Your Spinnaker instance should be available without a ssh tunnel so so you should have set up your Apache like specified in the <a href="http://www.spinnaker.io/docs/troubleshooting-guide#section-why-can-t-i-access-spinnaker-using-my-machine-s-ip-addr-or-hostname-">official doc</a>.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_spinnaker_local_yml">spinnaker-local.yml</h5>
+<div class="paragraph">
+<p>Here are the important configs to set :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>services:
+  default:
+    # These defaults can be modified to change all the spinnaker subsystems
+    # (clouddriver, gate, etc) at once, but not external systems (jenkins, etc).
+    # Individual systems can still be overridden using their own section entry
+    # directly under 'services'.
+    protocol: http    # Assume all spinnaker subsystems are using http
+    host: 0.0.0.0</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>  deck:
+    # Frontend configuration.
+    # If you are proxying Spinnaker behind a single host, you may want to
+    # override these values. Remember to run `reconfigure_spinnaker.sh` after.
+    baseUrl: http://spinnaker.mydomain.net:9000
+    gateUrl: ${services.deck.baseUrl}/gate
+    auth:
+      enabled: true</code></pre>
+</div>
+</div>
+<div class="sect5">
+<h6 id="_gate_local_yml">gate-local.yml</h6>
+<div class="paragraph">
+<p>Create a <code>gate-local.yml</code> file if you do not have one and set it like that :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>spring:
+  oauth2:
+    client:
+      preEstablishedRedirectUri: http://spinnaker.mydomain.net:9000/gate/login
+      useCurrentUri: false
+      clientId: theClientIdYouGotEarlier
+      clientSecret: theClientSecretYouGotEarlier
+      userAuthorizationUri: https://github.com/login/oauth/authorize # Used to get an authorization code
+      accessTokenUri: https://github.com/login/oauth/access_token # Used to get an access token
+      scope: read:org,user:email
+    resource:
+      userInfoUri: https://api.github.com/user # Used to the current user's profile
+    userInfoMapping: # Used to map the userInfo response to our User
+      email: email
+      firstName: name
+      lastName:
+      username: login
+auth:
+  groupMembership:
+    service: github
+    github:
+      organization: yourOrganization
+      baseUrl: https://api.github.com
+      access_token: theTokenYouGotEarlier</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
         </section>
 
         <footer class="post-footer">
@@ -131,8 +314,8 @@ null
         hljs.initHighlightingOnLoad();
       </script>
 
-    <script type="text/javascript" src="//gbougeard.github.io/blog.english/themes/casper/assets/js/jquery.fitvids.js?v=1467989609074"></script>
-    <script type="text/javascript" src="//gbougeard.github.io/blog.english/themes/casper/assets/js/index.js?v=1467989609074"></script>
+    <script type="text/javascript" src="//gbougeard.github.io/blog.english/themes/casper/assets/js/jquery.fitvids.js?v=1467993606936"></script>
+    <script type="text/javascript" src="//gbougeard.github.io/blog.english/themes/casper/assets/js/index.js?v=1467993606936"></script>
 
     <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
