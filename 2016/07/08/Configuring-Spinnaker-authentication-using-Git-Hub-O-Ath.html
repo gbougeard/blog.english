@@ -12,7 +12,7 @@
 
     <link rel="shortcut icon" href="https://gbougeard.github.io/blog.english/favicon.ico">
 
-    <link rel="stylesheet" type="text/css" href="//gbougeard.github.io/blog.english/themes/casper/assets/css/screen.css?v=1467993606936" />
+    <link rel="stylesheet" type="text/css" href="//gbougeard.github.io/blog.english/themes/casper/assets/css/screen.css?v=1467994067337" />
     <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
 
     <link rel="canonical" href="https://gbougeard.github.io/blog.english/2016/07/08/Configuring-Spinnaker-authentication-using-Git-Hub-O-Ath.html" />
@@ -172,14 +172,14 @@ You can use your personal GitHub account ou create a specific one for a kind of 
 </div>
 <div class="sect2">
 <h3 id="_spinnaker">Spinnaker</h3>
-<div class="sect4">
-<h5 id="_apache">Apache</h5>
+<div class="sect3">
+<h4 id="_apache">Apache</h4>
 <div class="paragraph">
 <p>Your Spinnaker instance should be available without a ssh tunnel so so you should have set up your Apache like specified in the <a href="http://www.spinnaker.io/docs/troubleshooting-guide#section-why-can-t-i-access-spinnaker-using-my-machine-s-ip-addr-or-hostname-">official doc</a>.</p>
 </div>
 </div>
-<div class="sect4">
-<h5 id="_spinnaker_local_yml">spinnaker-local.yml</h5>
+<div class="sect3">
+<h4 id="_spinnaker_local_yml">spinnaker-local.yml</h4>
 <div class="paragraph">
 <p>Here are the important configs to set :</p>
 </div>
@@ -207,8 +207,8 @@ You can use your personal GitHub account ou create a specific one for a kind of 
       enabled: true</code></pre>
 </div>
 </div>
-<div class="sect5">
-<h6 id="_gate_local_yml">gate-local.yml</h6>
+<div class="sect4">
+<h5 id="_gate_local_yml">gate-local.yml</h5>
 <div class="paragraph">
 <p>Create a <code>gate-local.yml</code> file if you do not have one and set it like that :</p>
 </div>
@@ -240,6 +240,28 @@ auth:
       access_token: theTokenYouGotEarlier</code></pre>
 </div>
 </div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_let_s_test_it">Let&#8217;s test it</h4>
+<div class="paragraph">
+<p>Don&#8217;t forget to run the <code>reconfigure_spinnaker.sh</code> script to regenerate deck <code>settings.js</code> file and then restart spinnaker and you should be able to authenticate yourself using GitHub!<br>
+You can check your configuration is ok on <code><a href="http://spinnaker.mydomain.net:9000/gate/env" class="bare">http://spinnaker.mydomain.net:9000/gate/env</a></code> .</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Each GitHub user who wants to authenticate itself in Spinnaker must have a public email (set <a href="https://github.com/settings/profile">here</a>). If he does not, he will be indefinitively redirected like an infinite loop.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Once authenticated you could see your "profile" using this url <code><a href="http://spinnaker.mydomain.net:9000/gate/auth/user" class="bare">http://spinnaker.mydomain.net:9000/gate/auth/user</a></code> .</p>
 </div>
 </div>
 </div>
@@ -314,8 +336,8 @@ auth:
         hljs.initHighlightingOnLoad();
       </script>
 
-    <script type="text/javascript" src="//gbougeard.github.io/blog.english/themes/casper/assets/js/jquery.fitvids.js?v=1467993606936"></script>
-    <script type="text/javascript" src="//gbougeard.github.io/blog.english/themes/casper/assets/js/index.js?v=1467993606936"></script>
+    <script type="text/javascript" src="//gbougeard.github.io/blog.english/themes/casper/assets/js/jquery.fitvids.js?v=1467994067337"></script>
+    <script type="text/javascript" src="//gbougeard.github.io/blog.english/themes/casper/assets/js/index.js?v=1467994067337"></script>
 
     <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
