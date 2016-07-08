@@ -1,0 +1,4 @@
+= Configuring Spinnaker authentication using GitHub OAuth
+:published_at: 2016-07-08
+:hp-tags: Spinnaker, OAuth
+
