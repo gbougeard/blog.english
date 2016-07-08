@@ -4,7 +4,16 @@
     "repositoryName": "blog.english",
     "branch": "gh-pages"
   },
+  "site": {
+    "googleAnalytics": "UA-33853303-1"
+  },
+  "socialnetwork": {
+    "email": "gbougeard+blog@gmail.com",
+    "twitter": "gbougeard",
+    "googleplus": "",
+    "github": "gbougeard"
+  },
   "theme": {
-    "name": "Casper"
+    "name": "casper"
   }
 }
