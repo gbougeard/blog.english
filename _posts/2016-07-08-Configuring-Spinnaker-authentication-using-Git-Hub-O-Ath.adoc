@@ -53,10 +53,10 @@ Unfortunately, it's not currently possible to use the `clientId` and `clientSecr
 You can use your personal GitHub account ou create a specific one for a kind of bot, as you wish, the only requirement is to select the `read:org` scope for this token. 
 
 === Spinnaker
-===== Apache
+==== Apache
 Your Spinnaker instance should be available without a ssh tunnel so so you should have set up your Apache like specified in the link:http://www.spinnaker.io/docs/troubleshooting-guide#section-why-can-t-i-access-spinnaker-using-my-machine-s-ip-addr-or-hostname-[official doc].
 
-===== spinnaker-local.yml
+==== spinnaker-local.yml
 Here are the important configs to set :
 ```
 services:
@@ -80,7 +80,7 @@ services:
       enabled: true
 ```
 
-====== gate-local.yml
+===== gate-local.yml
 Create a `gate-local.yml` file if you do not have one and set it like that :
 
 ```
@@ -109,6 +109,15 @@ auth:
       baseUrl: https://api.github.com
       access_token: theTokenYouGotEarlier
 ```
+
+==== Let's test it
+Don't forget to run the `reconfigure_spinnaker.sh` script to regenerate deck `settings.js` file and then restart spinnaker and you should be able to authenticate yourself using GitHub! +
+You can check your configuration is ok on `http://spinnaker.mydomain.net:9000/gate/env` .
+
+
+IMPORTANT: Each GitHub user who wants to authenticate itself in Spinnaker must have a public email (set link:https://github.com/settings/profile[here]). If he does not, he will be indefinitively redirected like an infinite loop.
+
+Once authenticated you could see your "profile" using this url `http://spinnaker.mydomain.net:9000/gate/auth/user` .
 
 
 
