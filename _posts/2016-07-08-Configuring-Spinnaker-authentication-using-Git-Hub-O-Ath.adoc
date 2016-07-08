@@ -1,4 +1,114 @@
 = Configuring Spinnaker authentication using GitHub OAuth
 :published_at: 2016-07-08
-:hp-tags: Spinnaker, OAuth
+:hp-tags: Spinnaker, OAuth,
+
+== Target audience
+The target audience for this post is someone who already know what is link:http://www.spinnaker.io[Spinnaker] and is planning to configure authentication (AuthN) for his Spinnaker instance.
+
+== Introduction
+At the moment, AuthN and Authorization (AuthZ) are still work in progress on the Spinnaker project. You can see in the link:http://www.spinnaker.io/docs/roadmap[roadmap] the Google team is in charge. They naturally implemented OAuth2 support for AuthN and AuthZ through Google Apps. But as the implementation is based on Spring Security, using another OAuth2 provider is not really complex. 
+Everything is basicaly explained in the link:http://www.spinnaker.io/docs/securing-spinnaker#section-oauth-2-0[docs] but I'd like to cover in detail how to use GitHub for AuthN and Authz.
+
+== Context
+I consider you already have a running instance of Spinnaker.
+
+I will describe my setup which is based on the link:http://www.spinnaker.io/docs/amazon-ami-ids[official AMI] deployed on AWS.
+
+=== AWS
+==== Security group
+The following ports are open : `9000` (deck), `8084` (gate), `8087` (rosco) for `0.0.0.0/0`.
+
+==== Route53
+I added the DNS alias `spinnaker.mydomain.net` for the IP of my running instance.
+
+==== ELB
+I do not use an ELB in front of my Spinnaker instance.
+
+=== GitHub
+If you want to set up AuthN and AuthZ through GitHub, you must have a GitHub organization.
+
+Typically you want all your organization members to be able to login and use GitHub teams to define ACL.
+
+WARNING: At the moment, once you will have configured AuthN, everyone with a GitHub account will be able to log into your Spinnaker with Read-Only (RO) rights. You will be able to give Read-Write (RW) to all your organization members or a few ones (using GitHub teams) but everyone will be able to see your infrastructure, pipelines, etc ... A brand new service, link:https://github.com/spinnaker/fiat[fiat] should solve this security issue and give the ability to define really fine ACL but it's currently under development. The solution I chose to fix this is to restrict the access to my Spinnaker instance through a VPN (I will not detail this part in this article).
+
+==== OAuth application
+You need to register a new OAuth application on this page `https://github.com/organizations/yourOrg/settings/applications` .
+
+The application name and the description will be displayed to the users the first time they autenticate theirself.
+
+The two more important fields to fill are :
+
+ * _Homepage URL_ : `http://spinnaker.mydmomain.net:9000` aka deck URL
+ * _Authorization callback URL_ : `http://spinnaker.mydmomain.net:9000/gate/login` which is based on gate URL
+ 
+You can notice I used explicit ports, this is because I don't use an ELB in front on my instance. Otherwise, the ELB might redirect the port `80` to `9000` and I would not have to use explicit ports.
+
+Once your configuration saved, you should have two important informations now : `Client ID` and `Client Secret` . This will be used later in Spinnaker configuration.
+
+==== Access token
+This is required for AuthZ.
+
+Spinnaker will use GitHub API to check users membership. To consume GitHup API, an access token is required so you need to generate one. +
+Unfortunately, it's not currently possible to use the `clientId` and `clientSecret` as credentials. You must generate a personal token on this page `https://github.com/settings/tokens` . +
+You can use your personal GitHub account ou create a specific one for a kind of bot, as you wish, the only requirement is to select the `read:org` scope for this token. 
+
+=== Spinnaker
+===== Apache
+Your Spinnaker instance should be available without a ssh tunnel so so you should have set up your Apache like specified in the link:http://www.spinnaker.io/docs/troubleshooting-guide#section-why-can-t-i-access-spinnaker-using-my-machine-s-ip-addr-or-hostname-[official doc].
+
+===== spinnaker-local.yml
+Here are the important configs to set :
+```
+services:
+  default:
+    # These defaults can be modified to change all the spinnaker subsystems
+    # (clouddriver, gate, etc) at once, but not external systems (jenkins, etc).
+    # Individual systems can still be overridden using their own section entry
+    # directly under 'services'.
+    protocol: http    # Assume all spinnaker subsystems are using http
+    host: 0.0.0.0   
+```
+
+```
+  deck:
+    # Frontend configuration.
+    # If you are proxying Spinnaker behind a single host, you may want to
+    # override these values. Remember to run `reconfigure_spinnaker.sh` after.
+    baseUrl: http://spinnaker.mydomain.net:9000
+    gateUrl: ${services.deck.baseUrl}/gate
+    auth:
+      enabled: true
+```
+
+====== gate-local.yml
+Create a `gate-local.yml` file if you do not have one and set it like that :
+
+```
+spring:
+  oauth2:
+    client:
+      preEstablishedRedirectUri: http://spinnaker.mydomain.net:9000/gate/login
+      useCurrentUri: false
+      clientId: theClientIdYouGotEarlier
+      clientSecret: theClientSecretYouGotEarlier
+      userAuthorizationUri: https://github.com/login/oauth/authorize # Used to get an authorization code
+      accessTokenUri: https://github.com/login/oauth/access_token # Used to get an access token
+      scope: read:org,user:email
+    resource:
+      userInfoUri: https://api.github.com/user # Used to the current user's profile
+    userInfoMapping: # Used to map the userInfo response to our User
+      email: email
+      firstName: name
+      lastName:
+      username: login
+auth:
+  groupMembership:
+    service: github
+    github:
+      organization: yourOrganization
+      baseUrl: https://api.github.com
+      access_token: theTokenYouGotEarlier
+```
+
+
 
