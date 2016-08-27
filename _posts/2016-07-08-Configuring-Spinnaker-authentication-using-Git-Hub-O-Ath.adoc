@@ -29,7 +29,16 @@ If you want to set up AuthN and AuthZ through GitHub, you must have a GitHub org
 
 Typically you want all your organization members to be able to login and use GitHub teams to define ACL.
 
-WARNING: At the moment, once you will have configured AuthN, everyone with a GitHub account will be able to log into your Spinnaker with Read-Only (RO) rights. You will be able to give Read-Write (RW) to all your organization members or a few ones (using GitHub teams) but everyone will be able to see your infrastructure, pipelines, etc ... A brand new service, link:https://github.com/spinnaker/fiat[fiat] should solve this security issue and give the ability to define really fine ACL but it's currently under development. The solution I chose to fix this is to restrict the access to my Spinnaker instance through a VPN (I will not detail this part in this article).
+WARNING: At the moment, once you will have configured AuthN, everyone with a GitHub account will be able to log into your Spinnaker with Read-Only (RO) rights. You will be able to give Read-Write (RW) to all your organization members or a few ones (using GitHub teams) but everyone will be able to see your infrastructure, pipelines, etc ... A brand new service, link:https://github.com/spinnaker/fiat[fiat] should solve this security issue and give the ability to define really fine ACL but it's currently under development. +
+The solution I chose to fix this is to restrict the access to my Spinnaker instance through a VPN (I will not detail this part in this article).
+
+EDIT: Another solution to restrict access is to use the `userInfoRequirements` parameter as explained in the link:http://www.spinnaker.io/docs/securing-spinnaker#section-gate-configuration[documentation]. The GitHub User retrieved when authenticated has a `company` field. You can link your GitHub organization to your GitHub profile setting in your profile as company `@myOrganisation`. To restrict access to your GitHub organization `@myOrganization` you can set this in your `gate-local.yml`file :
+```
+userInfoRequirements:
+      company: @myOrganization
+```
+WARNING: This is not really secure! Any GitHub user can set his Company in his GitHub profile. He does not have to be a member of your GitHub organization. A GitHub organization administrator can not change a user profile. This is a tricky hack. You could also use another field like `bio` or `city` but be aware all those fields are public, so do not use a secret value to restrict access.
+
 
 ==== OAuth application
 You need to register a new OAuth application on this page `https://github.com/organizations/yourOrg/settings/applications` .
