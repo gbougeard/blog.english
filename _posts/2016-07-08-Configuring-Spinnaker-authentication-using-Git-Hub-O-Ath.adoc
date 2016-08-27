@@ -39,6 +39,7 @@ userInfoRequirements:
 ```
 WARNING: This is not really secure! Any GitHub user can set his Company in his GitHub profile. He does not have to be a member of your GitHub organization. A GitHub organization administrator can not change a user profile. This is a tricky hack. You could also use another field like `bio` or `city` but be aware all those fields are public, so do not use a secret value to restrict access.
 
+IMPORTANT: the `userInfoRequirements` should definitively be used to restrict access. If in the GitHub profile there were the organizations a user belongs to, it would be secure. 
 
 ==== OAuth application
 You need to register a new OAuth application on this page `https://github.com/organizations/yourOrg/settings/applications` .
