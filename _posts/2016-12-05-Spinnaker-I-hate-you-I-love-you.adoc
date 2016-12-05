@@ -1,4 +1,6 @@
 = Spinnaker, I hate you I love you
+:published_at: 2016-12-05
+:hp-tags: Spinnaker,
 
 Spinnaker, we need to talk.
 
