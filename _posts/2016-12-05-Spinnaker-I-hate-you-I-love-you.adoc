@@ -1,0 +1,18 @@
+= Spinnaker, I hate you I love you
+
+Spinnaker, we need to talk.
+
+We've been flirting from some months now and I must admit I really like you.
+You got me with your fancy UI, a radical change from my ex the AWS Console. It was love at first sight.
+Then you showed how flexible you are (using SpEL in your pipelines ), taught me some tricks (how to link a jenkins build to a server group version using a tag).
+
+It became to be serious between us.
+
+Of course, I found some incoveniences about you, how fatty you were when you hooked up on Cassandra, your addiction on cloud providers API (babe, you used to consume a lot of bandwith!), but you know, love makes lovers blind.
+
+Finally our first big argument happened. About religion, principles. Your faith in Scandinavian mythology could lead us to the end. You know I'm a single dad, I can't accept to rename my existing children according to your goddess Frigga. We might do it for our own children but not for the grown ones. You must accept them, recognize them and maybe adopt them.
+Secularism is important. Principles too. 
+
+Naming conventions must be lifelong, It's not acceptable to rename existing stuff just to be pleasant to your lover.
+
+I hate you I love you, This might be the end of our story but I don't blame it on you, I am conscient of your potential, I blame it on your youth.
