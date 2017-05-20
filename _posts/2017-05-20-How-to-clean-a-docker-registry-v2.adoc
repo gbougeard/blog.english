@@ -6,7 +6,7 @@ If you host a Docker registry instance and heavily use Docker in your Continuous
 
 For example, at Teads our CI is based on Docker (a Docker image is built for each Pull Request update) and we estimate it consumes 200Gb per month on our Docker Registry (DR).
 
-Contrary to link:url[https://github.com/docker/distribution/issues/1859#issuecomment-290717740, what some people say], storage is not infinite and at some point you need to clean up your DR. The DR v2 includes a link:[https://docs.docker.com/registry/garbage-collection/, Garbage Collector (GC)] since v2.4.0 to securely clean your storage. But to make the GC efficient you first need to delete unused references.
+Contrary to link:https://github.com/docker/distribution/issues/1859#issuecomment-290717740[what some people say], storage is not infinite and at some point you need to clean up your DR. The DR v2 includes a link:https://docs.docker.com/registry/garbage-collection/[Garbage Collector (GC)] since v2.4.0 to securely clean your storage. But to make the GC efficient you first need to delete unused references.
 
 == Quick glossary
 
@@ -31,26 +31,26 @@ If you create a Docker image for every Pull Request you create, maybe you can de
 As I said earlier, there will be one reference stored for each Docker image pushed. So, if you update 10 times your Pull Request, there will be 10 references for the tag `myPullRequest` in the DR. Only one will be fetchable by the tag `myPullRequest` :
 
 `docker pull myImage:myPullRequest`
+
 The others 9 will be only fetchable by their digest :
 ```
 docker pull myImage@sha256:digest1
 docker pull myImage@sha256:digest2
 ...
 docker pull myImage@sha256:digest9
-````
+```
 
 Let's call those 9 references _outdated digests_.
 
 == How to clean references?
 
-link:url[https://docs.docker.com/registry/spec/api/#deleting-an-image, Using the DR HTTP API] : 
+link:https://docs.docker.com/registry/spec/api/#deleting-an-image[Using the DR HTTP API] : 
 to delete a tag, you need to delete its manifest, and to delete a manifest you need its digest.
 
 Accessing the DR storage filesystem.
-If you have access to it, you can rm some files but you must be sure of what you are doing because you can easily corrupt your DR. The storage file tree is described link:url[https://github.com/docker/distribution/blob/master/registry/storage/paths.go#L21, here].
+If you have access to it, you can rm some files but you must be sure of what you are doing because you can easily corrupt your DR. The storage file tree is described link:https://github.com/docker/distribution/blob/master/registry/storage/paths.go#L21[here].
 
 ```
-
 // The path layout in the storage backend is roughly as follows:
 //
 //		<root>/v2
@@ -76,7 +76,7 @@ If you have access to it, you can rm some files but you must be sure of what you
 ```
 *Do not rm blobs by yourself! Let the GC handle this part!*
 
-Attention: *rming files on the storage and running the GC are critical operations : your DR must be in Read-Only mode. No image must be pushed while you're performing those ops.*
+*_Attention:_ rming files on the storage and running the GC are critical operations : your DR must be in Read-Only mode. No image must be pushed while you're performing those ops.*
 
 There are 2 files to `rm` to cleanly remove a digest :
 ```
@@ -88,6 +88,6 @@ There are 2 files to `rm` to cleanly remove a digest :
 ```
 After deleting the 2 files, you can run the GC and it should free some space.
 
-I wrote link:url[https://gist.github.com/gbougeard/48e190f931653f99aaea668dd03759ef, this script] to delete outdated digests for one specific or all images of a DR. It also estimates the size of the potential freed space after Garbage Collecting. It's an estimation because Docker images share layers (and so blobs) and the GC will not remove the shared layers (otherwise your DR will be corrupted).
+I wrote link:https://gist.github.com/gbougeard/48e190f931653f99aaea668dd03759ef[this script] to delete outdated digests for one specific or all images of a DR. It also estimates the size of the potential freed space after Garbage Collecting. It's an estimation because Docker images share layers (and so blobs) and the GC will not remove the shared layers (otherwise your DR will be corrupted).
 
-The future versions of the lnk:url[https://github.com/docker/distribution/issues, Docker Registry] should enhance the GC abilities because there are a lot of issues/questions about it.
+The future versions of the link:https://github.com/docker/distribution/issues[Docker Registry] should enhance the GC abilities because there are a lot of issues/questions about it.
