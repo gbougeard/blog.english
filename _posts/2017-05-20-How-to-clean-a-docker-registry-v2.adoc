@@ -1,0 +1,93 @@
+= How to clean a docker registry v2
+:published_at: 2017-05-20
+:hp-tags: docker, registry, devops, infra
+
+If you host a Docker registry instance and heavily use Docker in your Continuous Integration (CI), you will eventually face storage issues.
+
+For example, at Teads our CI is based on Docker (a Docker image is built for each Pull Request update) and we estimate it consumes 200Gb per month on our Docker Registry (DR).
+
+Contrary to link:url[https://github.com/docker/distribution/issues/1859#issuecomment-290717740, what some people say], storage is not infinite and at some point you need to clean up your DR. The DR v2 includes a link:[https://docs.docker.com/registry/garbage-collection/, Garbage Collector (GC)] since v2.4.0 to securely clean your storage. But to make the GC efficient you first need to delete unused references.
+
+== Quick glossary
+
+Docker *images* are referenced by *tags* and identified by a unique *digest*. This means that if you push two images `myImage` with the tag `master` - if they are different obviously - inside in the DR, they will be identified by two different *digests*. The last pushed *image* being the current.
+
+Docker *images* are composed by *layers*, and for each *layer* a *blob* is associated. The *blobs* are the most storage consuming files ; they will be cleaned by the GC.
+
+The *layers* of a Docker *image* are described in a *manifest*.
+
+== How does the Garbage Collector work?
+
+It's quite simple :
+
+ - it parses all existing tags for all existing images and marks the blobs they use
+ - it parses all existing blobs and delete those not marked in 1.
+So, to make the GC effective, we just need to delete references to blobs as the GC will delete orphan blobs.
+
+== Which references to clean?
+
+If you create a Docker image for every Pull Request you create, maybe you can delete it once the Pull Request is closed/merged. Let's call those references _outdated tags_.
+
+As I said earlier, there will be one reference stored for each Docker image pushed. So, if you update 10 times your Pull Request, there will be 10 references for the tag `myPullRequest` in the DR. Only one will be fetchable by the tag `myPullRequest` :
+
+`docker pull myImage:myPullRequest`
+The others 9 will be only fetchable by their digest :
+```
+docker pull myImage@sha256:digest1
+docker pull myImage@sha256:digest2
+...
+docker pull myImage@sha256:digest9
+````
+
+Let's call those 9 references _outdated digests_.
+
+== How to clean references?
+
+link:url[https://docs.docker.com/registry/spec/api/#deleting-an-image, Using the DR HTTP API] : 
+to delete a tag, you need to delete its manifest, and to delete a manifest you need its digest.
+
+Accessing the DR storage filesystem.
+If you have access to it, you can rm some files but you must be sure of what you are doing because you can easily corrupt your DR. The storage file tree is described link:url[https://github.com/docker/distribution/blob/master/registry/storage/paths.go#L21, here].
+
+```
+
+// The path layout in the storage backend is roughly as follows:
+//
+//		<root>/v2
+//			-> repositories/
+// 				-><name>/
+// 					-> _manifests/
+// 						revisions
+//							-> <manifest digest path>
+//								-> link
+// 						tags/<tag>
+//							-> current/link
+// 							-> index
+//								-> <algorithm>/<hex digest>/link
+// 					-> _layers/
+// 						<layer links to blob store>
+// 					-> _uploads/<id>
+// 						data
+// 						startedat
+// 						hashstates/<algorithm>/<offset>
+//			-> blob/<algorithm>
+//				<split directory content addressable storage>
+//
+```
+*Do not rm blobs by yourself! Let the GC handle this part!*
+
+Attention: *rming files on the storage and running the GC are critical operations : your DR must be in Read-Only mode. No image must be pushed while you're performing those ops.*
+
+There are 2 files to `rm` to cleanly remove a digest :
+```
+<root>/v2/repositories/${name}/_manifests/tags/${tag}/index/sha256/${hash}
+<root>/v2/repositories/${name}/_manifests/revisions/sha256/${hash}
+# ${name} : image name
+# ${tag}  : tag name
+# ${hash} : digest to delete
+```
+After deleting the 2 files, you can run the GC and it should free some space.
+
+I wrote link:url[https://gist.github.com/gbougeard/48e190f931653f99aaea668dd03759ef, this script] to delete outdated digests for one specific or all images of a DR. It also estimates the size of the potential freed space after Garbage Collecting. It's an estimation because Docker images share layers (and so blobs) and the GC will not remove the shared layers (otherwise your DR will be corrupted).
+
+The future versions of the lnk:url[https://github.com/docker/distribution/issues, Docker Registry] should enhance the GC abilities because there are a lot of issues/questions about it.
